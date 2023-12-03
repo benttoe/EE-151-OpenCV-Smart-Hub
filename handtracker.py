@@ -1,3 +1,7 @@
+"""Credits to ComputerVisionZone.com for providing code for this hand tracker"""
+
+
+# importing libraries
 import cv2
 import mediapipe as mp
 import time
@@ -68,19 +72,19 @@ def main():
 
     while True:
         success,img = cap.read()
-        img = detector.findHands(img)
-        lmList = detector.findPosition(img)
+        img = detector.findHands(img) # finds hands in the image
+        lmList = detector.findPosition(img) # finds position of landmarks
         if len(lmList) != 0:
-            print(lmList[4])
+            print(lmList[4]) 
 
-        cTime = time.time()
+        cTime = time.time() # calculating FPS
         fps = 1/(cTime-pTime)
         pTime = cTime
 
-        cv2.putText(img,str(int(fps)),(10,70), cv2.FONT_HERSHEY_PLAIN,3,(255,0,255),3)
+        cv2.putText(img,str(int(fps)),(10,70), cv2.FONT_HERSHEY_PLAIN,3,(255,0,255),3) # prints the FPS to the window(not used)
 
         cv2.imshow("Video",img)
-        if cv2.waitKey(1) == ord('q'):
+        if cv2.waitKey(1) == ord('q'): # pressing the wait key breaks the loop and runs the code after the loop
             break
 
     cap.release()

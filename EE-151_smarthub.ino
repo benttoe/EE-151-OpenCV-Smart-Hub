@@ -22,13 +22,14 @@
 
   Last updated August 17th, 2017
 */
-
+// including libraries
 #include <Servo.h>
 #include <Wire.h>
 #include <Firmata.h>
 #include <LiquidCrystal.h>
 #include "DHT.h"
 
+// defining i2c codes for different commands
 #define I2C_WRITE                   B00000000
 #define I2C_READ                    B00001000
 #define I2C_READ_CONTINUOUSLY       B00010000
@@ -669,7 +670,7 @@ void sysexCallback(byte command, byte argc, byte *argv)
         }
         if (IS_PIN_I2C(pin)) {
           Firmata.write(PIN_MODE_I2C);
-          Firmata.write(1);  // TODO: could assign a number to map to SCL or SDA
+          Firmata.write(1); 
         }
 #ifdef FIRMATA_SERIAL_FEATURE
         serialFeature.handleCapability(pin);
@@ -782,12 +783,23 @@ void systemResetCallback()
 
 void setup()
 {
+  // initialize LCD screen
   lcd.begin(16, 2);
+
+  // initialize DHT11 sensor
   dht.begin();
+
+  // assign button pin mode
   pinMode(BUTTONPIN, INPUT_PULLUP);
+
+  // makes the button a hardware interrupt
   attachInterrupt(digitalPinToInterrupt(BUTTONPIN), reset, RISING);
+
+  // opens pins a3 and a4 for output
   pinMode(A3, OUTPUT);
   pinMode(A4, OUTPUT);
+
+  // initilizes firmata instance and attaches functions listed above to commands in python
   Firmata.setFirmwareVersion(FIRMATA_FIRMWARE_MAJOR_VERSION, FIRMATA_FIRMWARE_MINOR_VERSION);
   Firmata.attach(ANALOG_MESSAGE, analogWriteCallback);
   Firmata.attach(DIGITAL_MESSAGE, digitalWriteCallback);
@@ -804,12 +816,15 @@ void setup()
   // Firmata.begin(Serial1);
   // However do not do this if you are using SERIAL_MESSAGE
 
+  // starts serial communication with Firmata
   Firmata.begin(57600);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for ATmega32u4-based boards and Arduino 101
   }
 
   systemResetCallback();  // reset to default config
+
+  // 2s delay to allow the temperature sensor to initialize properly
   delay(2000);
 }
 
@@ -818,12 +833,13 @@ void setup()
  *============================================================================*/
 void loop()
 {
-  if( buttonPressed )
+  if( buttonPressed ) // if hardware interrupt is activated, this condition becomes true and the content plays
   {
     delay( 3000 );              // Put this in the main loop to stop
                                 //    the message from being erased
     buttonPressed = false; 
 
+    // reinitializes and re-attaches objects and functions as was done in the setup 
     lcd.begin(16, 2);
     dht.begin();
     pinMode(BUTTONPIN, INPUT_PULLUP);
@@ -845,8 +861,11 @@ void loop()
   }
   byte pin, analogPin;
 
+  //gets temperature and humidity readings and maps them to the range of analogWrite()
   int temp = map(dht.readTemperature(), 0, 50, 0, 255);
   int humidity = map(dht.readHumidity(), 20, 80, 0, 255);
+
+  // essentially Firmata's analogWrite() function, writing the remapped values to A4 and A3
   Firmata.sendAnalog(A4, temp);
   Firmata.sendAnalog(A3, humidity);
 
@@ -886,10 +905,12 @@ void loop()
 
 }
 
+// hardware intterupt function
 void reset(){
+  //clears LCD 
   lcd.clear();
-  buttonPressed = true;
+  buttonPressed = true; // changes state of buttonPressed so the if statement in loop{} becomes true
   lcd.print("");
   lcd.setCursor(1, 0);
-  lcd.print("resetting");
+  lcd.print("resetting"); //prints "resetting". It was found that printing it to the second row made resetting work more often and completely
 }
